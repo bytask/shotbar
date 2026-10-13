@@ -41,14 +41,17 @@ function New-ShotBarShortcut([string]$LnkPath) {
 }
 
 function Stop-ShotBar {
+    # 別の場所に clone した ShotBar が動いていても止める（残っていると多重起動防止で新しい方が起動しない）
     Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" |
-        Where-Object { $_.CommandLine -like "*$($script:ScriptPath)*" -and $_.ProcessId -ne $PID } |
+        Where-Object { $_.CommandLine -match '-File\s+"?[^"]*ShotBar\.ps1' -and $_.CommandLine -notmatch '-(Install|Uninstall)\b' -and $_.ProcessId -ne $PID } |
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
 }
 
 if ($Install) {
     Stop-ShotBar
     New-ShotBarShortcut $script:MenuLnk
+    # ログイン時起動がオンなら、起動先をこのスクリプトに付け替える（clone し直した場所に追従させる）
+    if (Test-Path -LiteralPath $script:StartupLnk) { New-ShotBarShortcut $script:StartupLnk }
     Start-Process -FilePath $script:MenuLnk
     Write-Host "インストールしました。タスクトレイ（右下の ^ の中にあることもあります）に ShotBar が出ます。"
     exit 0
