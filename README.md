@@ -21,6 +21,14 @@ cd shotbar
 
 Xcode（Swift 5.9 以上、macOS 14 以上）が要る。署名は ad hoc なので自分の Mac 専用。入れ替えも同じコマンド、外すのは `./scripts/uninstall.sh`。
 
+### Windows
+
+タスクトレイに常駐する Windows 版が [`windows/`](windows/README.md) にある。PowerShell スクリプト 1 本で、ビルドは要らない。
+
+```powershell
+powershell -ExecutionPolicy Bypass -File windows\ShotBar.ps1 -Install
+```
+
 ## 作り
 
 | ファイル | 役割 |
