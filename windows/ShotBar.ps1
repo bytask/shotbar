@@ -6,8 +6,8 @@
   撮影機能は持たない（Win+Shift+S・Win+PrtScn・Snipping Tool の録画・Xbox Game Bar で撮ったものを扱う）。
 
   使い方:
-    powershell -ExecutionPolicy Bypass -File ShotBar.ps1 -Install     # スタートメニューに登録して起動（ログイン時起動はメニューで切り替え）
-    powershell -ExecutionPolicy Bypass -File ShotBar.ps1 -Uninstall   # 停止して登録を外す
+    powershell -ExecutionPolicy Bypass -File ShotBar.ps1 -Install     # %LOCALAPPDATA%\ShotBar にこの 1 本だけ置き、スタートメニューに登録して起動（ログイン時起動はメニューで切り替え）
+    powershell -ExecutionPolicy Bypass -File ShotBar.ps1 -Uninstall   # 停止して登録と置いた本体を外す
 #>
 param(
     [switch]$Install,
@@ -23,6 +23,7 @@ $script:AppDir      = Join-Path $env:LOCALAPPDATA 'ShotBar'
 $script:ClipDir     = Join-Path $script:AppDir 'clipboard'
 $script:SettingsPath = Join-Path $script:AppDir 'settings.json'
 $script:LogPath     = Join-Path $script:AppDir 'error.log'
+$script:InstalledPath = Join-Path $script:AppDir 'ShotBar.ps1'
 $script:StartupLnk  = Join-Path ([Environment]::GetFolderPath('Startup')) 'ShotBar.lnk'
 $script:MenuLnk     = Join-Path ([Environment]::GetFolderPath('Programs')) 'ShotBar.lnk'
 New-Item -ItemType Directory -Force -Path $script:ClipDir | Out-Null
@@ -49,8 +50,13 @@ function Stop-ShotBar {
 
 if ($Install) {
     Stop-ShotBar
+    # Windows 版の本体だけを %LOCALAPPDATA%\ShotBar に置いてそこから動かす。clone やダウンロードした場所は後で消してよい
+    if ($script:ScriptPath -ne $script:InstalledPath) {
+        Copy-Item -LiteralPath $script:ScriptPath -Destination $script:InstalledPath -Force
+        $script:ScriptPath = $script:InstalledPath
+    }
     New-ShotBarShortcut $script:MenuLnk
-    # ログイン時起動がオンなら、起動先をこのスクリプトに付け替える（clone し直した場所に追従させる）
+    # ログイン時起動がオンなら、起動先を置いた本体に付け替える（以前の版が clone の場所を指していても直す）
     if (Test-Path -LiteralPath $script:StartupLnk) { New-ShotBarShortcut $script:StartupLnk }
     Start-Process -FilePath $script:MenuLnk
     Write-Host "インストールしました。タスクトレイ（右下の ^ の中にあることもあります）に ShotBar が出ます。"
@@ -58,7 +64,7 @@ if ($Install) {
 }
 if ($Uninstall) {
     Stop-ShotBar
-    Remove-Item -LiteralPath $script:MenuLnk, $script:StartupLnk -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $script:MenuLnk, $script:StartupLnk, $script:InstalledPath -Force -ErrorAction SilentlyContinue
     Write-Host "アンインストールしました。クリップボードから残した画像は $script:ClipDir にあります（不要なら手で消してください）。"
     exit 0
 }

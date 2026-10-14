@@ -13,9 +13,14 @@ macOS のメニューバーに常駐し、直近のスクリーンショット�
 
 ## 入れる
 
+Mac 版と Windows 版は入れ方を分けてある。どちらも、もう片方の OS の分は手元に落とさない。
+
+### Mac
+
 ```sh
-git clone https://github.com/bytask/shotbar.git
+git clone --filter=blob:none --sparse https://github.com/bytask/shotbar.git
 cd shotbar
+git sparse-checkout set Sources Resources scripts   # Mac 版の分だけ取り出す（windows/ は落とさない）
 ./scripts/install.sh   # swift build → ShotBar.app を組んで ~/Applications に入れて起動
 ```
 
@@ -23,10 +28,13 @@ Xcode（Swift 5.9 以上、macOS 14 以上）が要る。署名は ad hoc なの
 
 ### Windows
 
-タスクトレイに常駐する Windows 版が [`windows/`](windows/README.md) にある。PowerShell スクリプト 1 本で、ビルドは要らない。
+タスクトレイに常駐する Windows 版が [`windows/`](windows/README.md) にある。PowerShell スクリプト 1 本で、ビルドは要らない。clone はせず、PowerShell に次を貼ると本体の 1 本だけを落として `%LOCALAPPDATA%\ShotBar\` に入れる（Mac 版のコードは入らない）。
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File windows\ShotBar.ps1 -Install
+[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072   # TLS 1.2
+$f = Join-Path $env:TEMP 'ShotBar.ps1'
+Invoke-WebRequest -UseBasicParsing https://raw.githubusercontent.com/bytask/shotbar/main/windows/ShotBar.ps1 -OutFile $f
+powershell -ExecutionPolicy Bypass -File $f -Install; Remove-Item $f
 ```
 
 ## 作り

@@ -6,13 +6,16 @@ ShotBar の Windows 版。タスクトレイに常駐し、直近のスクリー
 
 ## 入れる
 
+clone は要らない。PowerShell に次を貼ると、本体の `ShotBar.ps1` だけを落として `%LOCALAPPDATA%\ShotBar\` に置き、スタートメニューに登録して起動する。Mac 版のコード（`Sources/` など）は入らない。
+
 ```powershell
-git clone https://github.com/bytask/shotbar.git
-cd shotbar
-powershell -ExecutionPolicy Bypass -File windows\ShotBar.ps1 -Install     # スタートメニューに登録して起動
+[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072   # TLS 1.2
+$f = Join-Path $env:TEMP 'ShotBar.ps1'
+Invoke-WebRequest -UseBasicParsing https://raw.githubusercontent.com/bytask/shotbar/main/windows/ShotBar.ps1 -OutFile $f
+powershell -ExecutionPolicy Bypass -File $f -Install; Remove-Item $f
 ```
 
-外すのは `-Uninstall`。clone した場所のスクリプトを直接起動するので、`git pull` すれば次の起動から新しい版になる。ログイン時に起動するかはメニューの「ログイン時に起動」で切り替える（既定はオフ）。
+新しい版にするのも同じ手順。clone した repo から `powershell -ExecutionPolicy Bypass -File windows\ShotBar.ps1 -Install` でも同じ場所に入る（入れた後は clone を消してよい）。外すのは `powershell -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\ShotBar\ShotBar.ps1" -Uninstall`。ログイン時に起動するかはメニューの「ログイン時に起動」で切り替える（既定はオフ）。
 
 管理者側の設定（グループポリシー）で PowerShell スクリプトの実行を禁止しているPCでは動かない。
 
@@ -48,6 +51,7 @@ Win+Shift+S は自動保存とクリップボードの両方に入るので、�
 | 場所 | 役割 |
 |---|---|
 | `windows/ShotBar.ps1` | 全部。`-Install` / `-Uninstall`、タスクトレイとメニュー、保存先の解決（`SHGetKnownFolderPath`）、クリップボードの監視（1 秒ごとに `GetClipboardSequenceNumber`）、保存先の監視（`FileSystemWatcher`）、プレビュー窓 |
+| `%LOCALAPPDATA%\ShotBar\ShotBar.ps1` | 入れた本体。`-Install` がここへコピーし、スタートメニューとログイン時起動はここを指す |
 | `%LOCALAPPDATA%\ShotBar\settings.json` | 設定（`retentionDays` / `watchClipboard` / `showPreview` / `previewSeconds` / `extraFolders`） |
 | `%LOCALAPPDATA%\ShotBar\error.log` | うまくいかなかった処理の記録 |
 
